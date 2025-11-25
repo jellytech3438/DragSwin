@@ -1,16 +1,35 @@
 # DragSwin
 
-## Citing StyleSwin
+This repository uses [StyleSwin](https://github.com/microsoft/StyleSwin) to implement [DragGAN](https://github.com/XingangPan/DragGAN).
 
-```
-@misc{zhang2021styleswin,
-      title={StyleSwin: Transformer-based GAN for High-resolution Image Generation}, 
-      author={Bowen Zhang and Shuyang Gu and Bo Zhang and Jianmin Bao and Dong Chen and Fang Wen and Yong Wang and Baining Guo},
-      year={2021},
-      eprint={2112.10762},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV}
-}
+## Abstract
+
+DragGAN used StyleGAN2 as its backbone to modify and generate images. Our work depends on it heavily. Users can operate image dragging task from source points to target points. Although there are many variants of this paper appeared, but none of them achieved the task using Vision Transformers. Therefore, I aim to accomplish this task by implementing Transformer-based operations. Furthermore, I use mask as a significant part of manipulate with images, and modifying the model to generate better images.
+
+## Modification
+
+### Layer of Split
+When dragging images, DragGAN divides the features into fixed and trainable parts. We change the based model from CNN to Transformer. Therefore, we experimented with using different block indices in StyleSwin as the division point, and used LPIPS and MDS as evaluation metrics (lower is better).
+
+We observed that in StyleSwin, using later layers as the division block results in better scores.
+
+| Block No.      | 2 | 3 | 4 | 5 | 6 |
+| -------------- | ----- | ----- | ----- | ----- | ----- |
+| LPIPS ↓        | 0.403 | 0.411 | 0.420 | 0.359 | 0.354 |
+| MDS ↓          | 3.605 | 2.828 | 2.236 | 2.236 | 2.236 |
+
+(When the i-th layer is selected, the (i+1)-th layer (the first fixed layer) is used as the feature for loss computation.)
+
+### Mask Usage and Changes
+In the original DragGAN, users can restrict the region that is allowed to move during the dragging process by drawing a mask. However, in the paper, this restriction is implemented only through the loss function, which still results in unwanted changes within the masked region.
+To address this, we leverage the transformer architecture, which allows for more precise control through its attention mechanism.
+
+We also replace the Position Embedding with Rotary Position Embedding (RoPE) to improve patch relationships after movement.
+
+## Run the gui
+It is recommand to run the program with gui code.
+```bash
+$ python gui.py
 ```
 
 ## Responsible AI Considerations
@@ -19,14 +38,7 @@ Our work does not directly modify the exiting images which may alter the identit
 
 ## Acknowledgements
 
-This code borrows heavily from [stylegan2-pytorch](https://github.com/rosinality/stylegan2-pytorch) and [Swin-Transformer](https://github.com/microsoft/Swin-Transformer). We also thank the contributors of code [Positional Encoding in GANs](https://github.com/open-mmlab/mmgeneration/blob/master/configs/positional_encoding_in_gans/README.md), [DiffAug](https://github.com/mit-han-lab/data-efficient-gans), [StudioGAN](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN) and [GIQA](https://github.com/cientgu/GIQA).
-
-## Maintenance
-
-This is the codebase for our research work. Please open a GitHub issue for any help. If you have any questions regarding the technical details, feel free to contact [zhangbowen@mail.ustc.edu.cn](zhangbowen@mail.ustc.edu.cn) or [zhanbo@microsoft.com](zhanbo@microsoft.com).
-
+This code borrows heavily from [StyleSwin](https://github.com/rosinality/stylegan2-pytorch) and [DragGAN](https://github.com/XingangPan/DragGAN). We also adapt the codes from [Rotary Position Embedding for Vision Transformer](https://github.com/naver-ai/rope-vit).
 
 ## License
-The codes and the pretrained model in this repository are under the MIT license as specified by the LICENSE file. We use our labeled dataset to train the scratch detection model.
-
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+The codes are under the MIT license follow with [StyleSwin's Liecnes](https://github.com/microsoft/StyleSwin?tab=MIT-1-ov-file).
